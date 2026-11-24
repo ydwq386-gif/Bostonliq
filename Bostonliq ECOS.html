@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="uz"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bo‘stonliq EcoOS — ekologik platforma</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+:root{--green:#17643a;--deep:#103b26;--lime:#dff3e5;--bg:#f3f7f4;--ink:#1b3024;--muted:#64766b;--line:#dce7df;--white:#fff;--red:#b42318;--amber:#9a6700}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Arial,sans-serif}
+header{background:linear-gradient(125deg,var(--deep),#1e7545);color:#fff;padding:22px max(4vw,18px)}
+.top{max-width:1200px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.brand{font-weight:850;font-size:21px;letter-spacing:.2px}.brand small{display:block;font-size:11px;font-weight:500;color:#cce7d3;letter-spacing:1px}
+nav{display:flex;gap:7px;flex-wrap:wrap;margin-top:20px}nav a{color:#e9f5ec;text-decoration:none;border:1px solid #ffffff45;border-radius:30px;padding:8px 12px;font-size:13px}
+nav a.active{background:#ffffff;color:var(--deep)}
+main{max-width:1200px;margin:auto;padding:22px 18px}.hero{display:grid;grid-template-columns:1.3fr .7fr;gap:18px;align-items:stretch}
+.panel,.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 5px 18px #153b2010}
+h1{font-size:clamp(30px,4vw,48px);margin:8px 0}h2{font-size:22px;color:#14532d;margin:0 0 12px}h3{font-size:16px;margin:0 0 8px}
+p{line-height:1.5}.muted{color:var(--muted)}.tag{display:inline-block;background:var(--lime);color:#14532d;border-radius:30px;padding:5px 9px;font-size:11px;font-weight:750}
+.btn,button{border:0;background:var(--green);color:#fff;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer;font:inherit}
+button.alt,.btn.alt{background:#e8f3eb;color:#14532d}.btn{display:inline-block;text-decoration:none}
+button.danger{background:#fff0ef;color:var(--red)}button:disabled{opacity:.45;cursor:not-allowed}
+input,select,textarea{width:100%;padding:10px 11px;border:1px solid #cbd9ce;border-radius:9px;background:#fff;font:inherit;color:var(--ink)}
+textarea{min-height:85px;resize:vertical}label{display:block;font-size:13px;font-weight:700;margin:11px 0 5px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.section{margin:25px 0;scroll-margin-top:10px}
+.stat{font-size:29px;font-weight:850;color:var(--green)}.statcard{padding:15px}.statcard p{margin:4px 0 0;font-size:12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#map{height:440px;border-radius:14px;border:1px solid var(--line);z-index:1}
+.mapnote{font-size:12px;color:var(--muted);margin:8px 0}
+.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.toolbar select{max-width:220px}.toolbar button{white-space:nowrap}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.tab{background:#e9f1eb;color:#244a32}.tab.active{background:var(--green);color:#fff}
+.page{display:none}.page.active{display:block}.hidden{display:none!important}.rowitem{padding:13px 0;border-bottom:1px solid var(--line)}
+.status{font-size:11px;padding:4px 8px;border-radius:20px;background:#edf3ee;color:#31543b}
+.status.new{background:#fff4d6;color:#825b00}.status.done{background:#e1f5e7;color:#17643a}.status.work{background:#e7efff;color:#254f91}
+.small{font-size:12px}.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#loginbox{max-width:540px;margin:25px auto}.notice{padding:10px 12px;border-radius:10px;background:#fff7df;color:#745500;font-size:13px}
+.qr-panel{max-width:680px;margin:12px auto}.qr-output{min-height:190px;display:flex;align-items:center;justify-content:center;padding:16px;margin-top:12px;border:1px dashed var(--line);border-radius:12px;background:#fbfdfb}.qr-output img{max-width:100%;height:auto}footer{text-align:center;color:var(--muted);padding:25px;font-size:12px}footer a{color:var(--green);font-weight:700;text-decoration:none}footer a:hover{text-decoration:underline}
+.leaflet-popup-content{font-family:system-ui;line-height:1.45}
+@media(max-width:850px){.hero,.two{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}#map{height:350px}}
+@media(max-width:520px){.grid{grid-template-columns:1fr 1fr}.panel,.card{padding:14px}.top{align-items:flex-start}}
+</style></head><body>
+<header><div class="top">
+<div class="brand">🌿 Bo‘stonliq EcoOS <small>RAQAMLI EKOLOGIK BOSHQARUV PLATFORMASI</small></div>
+<div class="inline">
+<select id="languageSelect" aria-label="Tilni tanlash" onchange="setLanguage(this.value)" style="width:auto;min-width:125px;padding:8px 10px">
+<option value="uz">🇺🇿 O‘zbekcha</option><option value="ru">🇷🇺 Русский</option><option value="en">🇬🇧 English</option><option value="zh">🇨🇳 中文</option>
+</select>
+<span id="userlabel" class="small" style="color:#e5f3e8">Mehmon rejimi</span><button class="alt" id="logoutBtn" onclick="logout()" style="display:none">Chiqish</button></div>
+</div>
+<nav aria-label="Asosiy navigatsiya">
+<a href="#home" onclick="showPage('home');return false">Bosh sahifa</a>
+<a href="#login" onclick="showPage('login');return false">Kirish</a>
+<a href="#map" onclick="showPage('map');return false">Real xarita</a>
+<a href="#report" onclick="showPage('report');return false">Xabar yuborish</a>
+<a href="#workspace" onclick="showPage('workspace');return false">Ish kabineti</a>
+<a href="#volunteer" onclick="showPage('volunteer');return false">Ko‘ngillilar</a>
+<a href="#about" onclick="showPage('about');return false">Loyiha haqida</a>
+<a href="#qr" onclick="showPage('qr');return false">QR kod</a>
+</nav></header>
+<main>
+<div class="page active" id="page-home"><section id="overview" class="section hero">
+<div class="panel"><span class="tag">ECOOS 2.0 • BO‘STONLIQ</span><h1>Tabiatni asrash —<br>umumiy mas’uliyat.</h1>
+<p>Ekologik muammolarni xaritada belgilash, mas’ullarga yetkazish, bajarilgan ishlarni tasdiqlash va hududiy natijalarni kuzatish uchun yagona platforma.</p>
+<a class="btn" href="#report" onclick="showPage('report');return false">Muammo haqida xabar berish</a> <a class="btn alt" href="#map" onclick="showPage('map');return false">Xaritani ko‘rish</a></div>
+<div class="panel"><h3>EcoOS qanday ishlaydi?</h3><p>① Xabar yuboriladi</p><p>② Operator tekshiradi</p><p>③ Mas’ul tashkilotga yo‘naltiriladi</p><p>④ Ish bajarilib, dalil yuklanadi</p><p>⑤ Natija xarita va statistikada ko‘rinadi</p></div></section>
+<section class="section grid">
+<div class="card statcard"><div class="stat" id="countAll">0</div><b>Jami murojaat</b><p class="muted">Platformaga kiritilgan</p></div>
+<div class="card statcard"><div class="stat" id="countOpen">0</div><b>Yangi / jarayonda</b><p class="muted">Hali yopilmagan</p></div>
+<div class="card statcard"><div class="stat" id="countDone">0</div><b>Bartaraf etilgan</b><p class="muted">Tasdiqlangan holatlar</p></div>
+<div class="card statcard"><div class="stat" id="countVol">0</div><b>Ko‘ngilli yozuvlari</b><p class="muted">Demo ro‘yxat</p></div></section></div>
+<div class="page" id="page-login"><section id="loginbox" class="panel">
+<span class="tag">FOYDALANUVCHI KIRISHI</span><h2 style="margin-top:10px">Platformaga kirish</h2>
+<p class="muted small">Namoyish uchun rol tanlang. Bu hozircha haqiqiy akkaunt yoki parol bilan himoyalangan kirish emas.</p>
+<label>Foydalanuvchi nomi</label><input id="username" placeholder="Masalan: Zarina">
+<label>Rol</label><select id="role"><option value="citizen">Aholi / sayyoh</option><option value="operator">Operator / moderator</option><option value="organization">Mas’ul tashkilot</option><option value="volunteer">Ko‘ngilli</option><option value="admin">Administrator</option></select>
+<button style="margin-top:13px" onclick="login()">Kabinetga kirish</button>
+</section></div>
+<div class="page" id="page-map"><section class="section" id="mapsection"><h2>EcoMap — Bo‘stonliqning real xaritasi</h2>
+<p class="muted">Xarita OpenStreetMap ma’lumotlari asosida internet orqali yuklanadi. Belgilar foydalanuvchi yuborgan xabarlarning taxminiy koordinatalarini ko‘rsatadi; hudud nomlari esa yo‘nalish belgilaridir.</p>
+<div class="toolbar"><button class="alt" onclick="locateMe()">📍 Joylashuvimni aniqlash</button><button class="alt" onclick="map.setView([41.55,69.95],10)">Bo‘stonliqqa qaytish</button><select id="mapFilter" onchange="renderMarkers()"><option value="all">Barcha holatlar</option><option value="Yangi">Yangi</option><option value="Tekshirilmoqda">Tekshirilmoqda</option><option value="Jarayonda">Jarayonda</option><option value="Bartaraf etildi">Bartaraf etildi</option></select></div>
+<div id="map"></div><p class="mapnote">Xaritadan nuqtani tanlash orqali xabar formasiga koordinata qo‘shishingiz mumkin. Geolokatsiya faqat ruxsat berganingizda ishlaydi.</p></section></div>
+<div class="page" id="page-report"><section class="section two" id="report">
+<div class="card"><h2>EcoReport — muammo yuborish</h2><form id="reportForm">
+<label>Muammo turi</label><select id="type" required><option value="">Tanlang</option><option>Chiqindi</option><option>Suv ifloslanishi</option><option>Havo ifloslanishi</option><option>Tabiatga zarar</option><option>Yong‘in xavfi</option><option>Boshqa</option></select>
+<label>Hudud</label><select id="area" required><option value="">Tanlang</option><option>Chorvoq</option><option>Chimyon</option><option>Ugam–Chotqol</option><option>Boshqa joy</option></select>
+<label>Muammo izohi</label><textarea id="desc" required placeholder="Muammoni qisqacha tushuntiring..."></textarea>
+<label>Koordinata (xaritadan tanlang yoki GPS)</label><input id="coords" readonly placeholder="Xaritadan nuqtani tanlang">
+<label>Surat (ixtiyoriy)</label><input id="photo" type="file" accept="image/*">
+<label class="inline"><input id="consent" type="checkbox" required style="width:auto"> Shaxsiy maxfiy ma’lumot kiritmayman va demo ekanini tushundim.</label>
+<button type="submit">Murojaatni yuborish</button><p id="reportMsg" class="small muted" role="status"></p></form></div>
+<div class="card"><h2>Hududlar</h2><div class="rowitem"><b>Chorvoq</b><p class="muted small">Suv sifati, qirg‘oq tozaligi va chiqindi to‘planishi.</p></div><div class="rowitem"><b>Chimyon</b><p class="muted small">Sayyohlik yo‘laklari va tabiatga tushadigan yuklama.</p></div><div class="rowitem"><b>Ugam–Chotqol</b><p class="muted small">Suv sathi, muhofaza hududlari va yong‘in xavfi.</p></div><div class="notice" style="margin-top:14px">Favqulodda vaziyat yoki zudlik bilan aralashuv talab qiladigan holatda ushbu demo saytga tayanmang — tegishli rasmiy xizmatlarga bevosita murojaat qiling.</div></div>
+</section></div>
+<div class="page" id="page-workspace"><section class="section" id="workspace"><h2>Foydalanuvchi ish kabineti</h2><div class="panel"><div id="roleInfo" class="muted">Kabinetdan foydalanish uchun yuqorida rol tanlab kiring.</div>
+<div id="workspaceContent"></div></div></section></div>
+<div class="page" id="page-volunteer"><section class="section two" id="volunteer">
+<div class="card"><h2>EcoVolunteer — ko‘ngillilar</h2><p class="muted small">Tozalash aksiyasi yoki ekologik tadbirga qiziqishingizni bildiring.</p>
+<form id="volForm"><label>Ism yoki jamoa nomi</label><input id="volName" required placeholder="Ismingiz / jamoangiz"><label>Qiziqish yo‘nalishi</label><select id="volInterest"><option>Tozalash aksiyasi</option><option>Daraxt ekish</option><option>Ekologik targ‘ibot</option><option>Ma’lumot yig‘ish</option></select><button style="margin-top:12px">Ko‘ngilli sifatida yozilish</button></form><div id="volMsg" class="small muted"></div></div>
+<div class="card"><h2>EcoAlert va EcoSensor</h2><p>Kelajakda tasdiqlangan ekologik ogohlantirishlar, suv sifati va sathini o‘lchovchi sensorlar hamda hududiy kuzatuv qurilmalari ulanadi.</p><p class="muted small">Ushbu namoyish versiyasi haqiqiy sensor o‘lchovi yoki push/SMS xabar yubormaydi.</p></div></section></div>
+<div class="page" id="page-about"><section class="section" id="about"><h2>Platforma haqida</h2><div class="card"><p><b>Bo‘stonliq EcoOS</b> — ekologik xabarlarni qabul qilish, tekshirish, mas’ul tashkilotga yo‘naltirish va bajarilgan natijani tasdiqlashga mo‘ljallangan raqamli ekotizim.</p><p><b>AI moduli:</b> kelajakda xabarlarni toifalash va takroriy murojaatlarni aniqlashga yordam beradi. Yakuniy qaror inson tomonidan qabul qilinadi.</p><p><b>Maxfiylik:</b> ushbu demo ma’lumotlarni faqat shu brauzer qurilmasida saqlaydi. Haqiqiy ishga tushirish uchun himoyalangan server, foydalanuvchi akkauntlari, ruxsat darajalari, zaxira nusxa va maxfiylik siyosati zarur.</p><p class="notice">Muhim texnik izoh: hozirgi versiyada turli rollar bir brauzerda namoyish etiladi. Turli telefon va kompyuterlardan bir xil ma’lumot bilan foydalanish uchun backend/server va markaziy ma’lumotlar bazasi ulanishi shart.</p></div></section></div>
+<div class="page" id="page-qr">
+<section class="section">
+  <div class="panel qr-panel">
+    <span class="tag">ECOOS • QR</span>
+    <h2 style="margin-top:10px">Sayt uchun QR kod yaratish</h2>
+    <p class="muted">Sayt internetga joylangandan keyin uning to‘liq havolasini kiriting. QR kod telefon kamerasi orqali shu havolani ochadi.</p>
+    <label for="siteUrl">Saytning internetdagi manzili</label>
+    <input id="siteUrl" type="url" value="https://ydwq386-gif.github.io/Bostonliq/Bostonliq%20ECOS.html" placeholder="https://saytingiz-manzili.uz" autocomplete="url">
+    <div class="toolbar"><button type="button" onclick="generateSiteQR()">QR kod yaratish</button><button type="button" class="alt" onclick="downloadSiteQR()">QR kodni yuklab olish</button></div>
+    <div id="qrOutput" class="qr-output"><p class="muted small">Havolani kiritib, “QR kod yaratish” tugmasini bosing.</p></div>
+    <p id="qrMessage" class="muted small" role="status">Eslatma: kompyuteringizdagi HTML fayl manzili boshqa telefonlarda ochilmaydi. Avval saytni internetga joylashtiring.</p>
+  </div>
+</section>
+</div>
+</main><footer>
+BO‘STONLIQ EcoOS • OpenStreetMap xaritasi • Demo platforma
+• <a href="https://github.com/ydwq386-gif/Bostonliq" target="_blank" rel="noopener noreferrer">GitHub</a>
+• <a href="https://ydwq386-gif.github.io/Bostonliq/Bostonliq%20ECOS.html" target="_blank" rel="noopener noreferrer">Сайт</a>
+</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+function showPage(pageName) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + pageName);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('nav a').forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + pageName));
+  window.scrollTo({top:0, behavior:'smooth'});
+  if (pageName === 'map' && map) setTimeout(() => map.invalidateSize(), 120);
+}
+function generateSiteQR() {
+  const field = document.getElementById('siteUrl');
+  const output = document.getElementById('qrOutput');
+  const message = document.getElementById('qrMessage');
+  const value = field.value.trim();
+  output.innerHTML = '';
+  if (!value || !/^https?:\/\//i.test(value)) {
+    message.textContent = 'Iltimos, https:// yoki http:// bilan boshlanadigan to‘liq sayt havolasini kiriting.';
+    field.focus(); return;
+  }
+  if (!window.QRCode) {
+    message.textContent = 'QR kutubxonasi yuklanmadi. Internetni tekshirib, sahifani qayta oching.';
+    return;
+  }
+  new QRCode(output, {text:value, width:220, height:220, colorDark:'#103b26', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.H});
+  message.textContent = 'QR kod tayyor. Telefon kamerasi bilan tekshirib ko‘ring.';
+}
+function downloadSiteQR() {
+  const output = document.getElementById('qrOutput');
+  const canvas = output.querySelector('canvas');
+  const img = output.querySelector('img');
+  const data = canvas ? canvas.toDataURL('image/png') : (img ? img.src : '');
+  if (!data) { document.getElementById('qrMessage').textContent = 'Avval QR kod yarating.'; return; }
+  const a = document.createElement('a'); a.href = data; a.download = 'Bostonliq_EcoOS_QR.png'; a.click();
+}
+
+const LANGS = {
+ru: {
+"Mehmon rejimi":"Гостевой режим","Chiqish":"Выйти","Bosh sahifa":"Главная","Real xarita":"Карта","Xabar yuborish":"Отправить сообщение","Ish kabineti":"Рабочий кабинет","Ko‘ngillilar":"Волонтёры","Loyiha haqida":"О проекте",
+"RAQAMLI EKOLOGIK BOSHQARUV PLATFORMASI":"ЦИФРОВАЯ ПЛАТФОРМА ЭКОЛОГИЧЕСКОГО УПРАВЛЕНИЯ","FOYDALANUVCHI KIRISHI":"ВХОД ПОЛЬЗОВАТЕЛЯ","Platformaga kirish":"Войти на платформу","Namoyish uchun rol tanlang. Bu hozircha haqiqiy akkaunt yoki parol bilan himoyalangan kirish emas.":"Выберите роль для демонстрации. Сейчас это не защищённый вход с настоящим аккаунтом и паролем.",
+"Foydalanuvchi nomi":"Имя пользователя","Masalan: Zarina":"Например: Зарина","Rol":"Роль","Aholi / sayyoh":"Житель / турист","Operator / moderator":"Оператор / модератор","Mas’ul tashkilot":"Ответственная организация","Ko‘ngilli":"Волонтёр","Administrator":"Администратор","Kabinetga kirish":"Войти в кабинет",
+"Tabiatni asrash —":"Сохранять природу —","umumiy mas’uliyat.":"общая ответственность.","Ekologik muammolarni xaritada belgilash, mas’ullarga yetkazish, bajarilgan ishlarni tasdiqlash va hududiy natijalarni kuzatish uchun yagona platforma.":"Единая платформа для отметки экологических проблем на карте, передачи ответственным лицам, подтверждения выполненных работ и отслеживания результатов.",
+"Muammo haqida xabar berish":"Сообщить о проблеме","Xaritani ko‘rish":"Посмотреть карту","EcoOS qanday ishlaydi?":"Как работает EcoOS?","Xabar yuboriladi":"Сообщение отправляется","Operator tekshiradi":"Оператор проверяет","Mas’ul tashkilotga yo‘naltiriladi":"Направляется ответственной организации","Ish bajarilib, dalil yuklanadi":"Работа выполняется, доказательство загружается","Natija xarita va statistikada ko‘rinadi":"Результат отображается на карте и в статистике",
+"Jami murojaat":"Всего обращений","Platformaga kiritilgan":"Добавлено на платформу","Yangi / jarayonda":"Новые / в процессе","Hali yopilmagan":"Ещё не закрыты","Bartaraf etilgan":"Устранено","Tasdiqlangan holatlar":"Подтверждённые случаи","Ko‘ngilli yozuvlari":"Записи волонтёров","Demo ro‘yxat":"Демонстрационный список",
+"EcoMap — Bo‘stonliqning real xaritasi":"EcoMap — реальная карта Бостанлыка","Xarita OpenStreetMap ma’lumotlari asosida internet orqali yuklanadi. Belgilar foydalanuvchi yuborgan xabarlarning taxminiy koordinatalarini ko‘rsatadi; hudud nomlari esa yo‘nalish belgilaridir.":"Карта загружается через интернет на основе OpenStreetMap. Метки показывают примерные координаты сообщений пользователей; названия районов обозначают направления.",
+"📍 Joylashuvimni aniqlash":"📍 Определить моё местоположение","Bo‘stonliqqa qaytish":"Вернуться в Бостанлык","Barcha holatlar":"Все статусы","Yangi":"Новый","Tekshirilmoqda":"Проверяется","Jarayonda":"В процессе","Bartaraf etildi":"Устранено","Xaritadan nuqtani tanlash orqali xabar formasiga koordinata qo‘shishingiz mumkin. Geolokatsiya faqat ruxsat berganingizda ishlaydi.":"Вы можете выбрать точку на карте, чтобы добавить координаты в форму. Геолокация работает только с вашего разрешения.",
+"EcoReport — muammo yuborish":"EcoReport — сообщить о проблеме","Muammo turi":"Тип проблемы","Tanlang":"Выберите","Chiqindi":"Мусор","Suv ifloslanishi":"Загрязнение воды","Havo ifloslanishi":"Загрязнение воздуха","Tabiatga zarar":"Вред природе","Yong‘in xavfi":"Опасность пожара","Boshqa":"Другое","Hudud":"Район","Chorvoq":"Чарвак","Chimyon":"Чимган","Ugam–Chotqol":"Угам-Чаткаль","Boshqa joy":"Другое место","Muammo izohi":"Описание проблемы","Muammoni qisqacha tushuntiring...":"Кратко опишите проблему...","Koordinata (xaritadan tanlang yoki GPS)":"Координаты (выберите на карте или GPS)","Xaritadan nuqtani tanlang":"Выберите точку на карте","Surat (ixtiyoriy)":"Фото (необязательно)","Shaxsiy maxfiy ma’lumot kiritmayman va demo ekanini tushundim.":"Я не указываю личные данные и понимаю, что это демоверсия.","Murojaatni yuborish":"Отправить обращение",
+"Hududlar":"Районы","Suv sifati, qirg‘oq tozaligi va chiqindi to‘planishi.":"Качество воды, чистота берега и скопление мусора.","Sayyohlik yo‘laklari va tabiatga tushadigan yuklama.":"Туристические тропы и нагрузка на природу.","Suv sathi, muhofaza hududlari va yong‘in xavfi.":"Уровень воды, охраняемые территории и риск пожара.","Favqulodda vaziyat yoki zudlik bilan aralashuv talab qiladigan holatda ushbu demo saytga tayanmang — tegishli rasmiy xizmatlarga bevosita murojaat qiling.":"При чрезвычайной ситуации или необходимости срочного вмешательства не полагайтесь на этот демосайт — обратитесь напрямую в соответствующие официальные службы.",
+"Foydalanuvchi ish kabineti":"Рабочий кабинет пользователя","Kabinetdan foydalanish uchun yuqorida rol tanlab kiring.":"Чтобы пользоваться кабинетом, выберите роль и войдите выше.","EcoVolunteer — ko‘ngillilar":"EcoVolunteer — волонтёры","Tozalash aksiyasi yoki ekologik tadbirga qiziqishingizni bildiring.":"Сообщите о своём интересе к уборке или экологическому мероприятию.","Ism yoki jamoa nomi":"Имя или название команды","Ismingiz / jamoangiz":"Ваше имя / команда","Qiziqish yo‘nalishi":"Направление интереса","Tozalash aksiyasi":"Акция по уборке","Daraxt ekish":"Посадка деревьев","Ekologik targ‘ibot":"Экологическое просвещение","Ma’lumot yig‘ish":"Сбор информации","Ko‘ngilli sifatida yozilish":"Записаться волонтёром","EcoAlert va EcoSensor":"EcoAlert и EcoSensor","Kelajakda tasdiqlangan ekologik ogohlantirishlar, suv sifati va sathini o‘lchovchi sensorlar hamda hududiy kuzatuv qurilmalari ulanadi.":"В будущем будут подключены подтверждённые экологические оповещения, датчики качества и уровня воды, а также устройства мониторинга районов.","Ushbu namoyish versiyasi haqiqiy sensor o‘lchovi yoki push/SMS xabar yubormaydi.":"Эта демонстрационная версия не получает реальные показания датчиков и не отправляет push/SMS-сообщения.",
+"Platforma haqida":"О платформе","— ekologik xabarlarni qabul qilish, tekshirish, mas’ul tashkilotga yo‘naltirish va bajarilgan natijani tasdiqlashga mo‘ljallangan raqamli ekotizim.":"— цифровая экосистема для приёма и проверки экологических сообщений, их передачи ответственным организациям и подтверждения результатов.","AI moduli:":"Модуль ИИ:","kelajakda xabarlarni toifalash va takroriy murojaatlarni aniqlashga yordam beradi. Yakuniy qaror inson tomonidan qabul qilinadi.":"в будущем поможет классифицировать сообщения и находить повторные обращения. Окончательное решение принимает человек.","Maxfiylik:":"Конфиденциальность:","ushbu demo ma’lumotlarni faqat shu brauzer qurilmasida saqlaydi. Haqiqiy ishga tushirish uchun himoyalangan server, foydalanuvchi akkauntlari, ruxsat darajalari, zaxira nusxa va maxfiylik siyosati zarur.":"эта демоверсия хранит данные только в этом браузере. Для полноценного запуска нужны защищённый сервер, аккаунты пользователей, уровни доступа, резервные копии и политика конфиденциальности.",
+"BO‘STONLIQ EcoOS • OpenStreetMap xaritasi • Demo platforma":"BO‘STONLIQ EcoOS • Карта OpenStreetMap • Демоплатформа"
+},
+en: {
+"Mehmon rejimi":"Guest mode","Chiqish":"Log out","Bosh sahifa":"Home","Real xarita":"Live map","Xabar yuborish":"Send a report","Ish kabineti":"Workspace","Ko‘ngillilar":"Volunteers","Loyiha haqida":"About",
+"RAQAMLI EKOLOGIK BOSHQARUV PLATFORMASI":"DIGITAL ENVIRONMENTAL MANAGEMENT PLATFORM","FOYDALANUVCHI KIRISHI":"USER LOGIN","Platformaga kirish":"Sign in to the platform","Namoyish uchun rol tanlang. Bu hozircha haqiqiy akkaunt yoki parol bilan himoyalangan kirish emas.":"Choose a role for the demo. This is not yet a real account- or password-protected login.",
+"Foydalanuvchi nomi":"Username","Masalan: Zarina":"For example: Zarina","Rol":"Role","Aholi / sayyoh":"Resident / tourist","Operator / moderator":"Operator / moderator","Mas’ul tashkilot":"Responsible organization","Ko‘ngilli":"Volunteer","Administrator":"Administrator","Kabinetga kirish":"Enter workspace",
+"Tabiatni asrash —":"Protecting nature is","umumiy mas’uliyat.":"everyone’s responsibility.","Ekologik muammolarni xaritada belgilash, mas’ullarga yetkazish, bajarilgan ishlarni tasdiqlash va hududiy natijalarni kuzatish uchun yagona platforma.":"A single platform to mark environmental problems on a map, send them to responsible teams, confirm completed work and track local results.",
+"Muammo haqida xabar berish":"Report a problem","Xaritani ko‘rish":"View the map","EcoOS qanday ishlaydi?":"How does EcoOS work?","Xabar yuboriladi":"A report is submitted","Operator tekshiradi":"The operator checks it","Mas’ul tashkilotga yo‘naltiriladi":"It is sent to the responsible organization","Ish bajarilib, dalil yuklanadi":"The work is completed and evidence is uploaded","Natija xarita va statistikada ko‘rinadi":"The result appears on the map and in statistics",
+"Jami murojaat":"Total reports","Platformaga kiritilgan":"Submitted to the platform","Yangi / jarayonda":"New / in progress","Hali yopilmagan":"Not yet closed","Bartaraf etilgan":"Resolved","Tasdiqlangan holatlar":"Confirmed cases","Ko‘ngilli yozuvlari":"Volunteer registrations","Demo ro‘yxat":"Demo list",
+"EcoMap — Bo‘stonliqning real xaritasi":"EcoMap — real map of Bo‘stonliq","Xarita OpenStreetMap ma’lumotlari asosida internet orqali yuklanadi. Belgilar foydalanuvchi yuborgan xabarlarning taxminiy koordinatalarini ko‘rsatadi; hudud nomlari esa yo‘nalish belgilaridir.":"The map loads online using OpenStreetMap data. Markers show approximate coordinates from user reports; area names indicate general locations.",
+"📍 Joylashuvimni aniqlash":"📍 Find my location","Bo‘stonliqqa qaytish":"Back to Bo‘stonliq","Barcha holatlar":"All statuses","Yangi":"New","Tekshirilmoqda":"Under review","Jarayonda":"In progress","Bartaraf etildi":"Resolved","Xaritadan nuqtani tanlash orqali xabar formasiga koordinata qo‘shishingiz mumkin. Geolokatsiya faqat ruxsat berganingizda ishlaydi.":"Select a point on the map to add coordinates to the report form. Geolocation works only with your permission.",
+"EcoReport — muammo yuborish":"EcoReport — report a problem","Muammo turi":"Problem type","Tanlang":"Choose","Chiqindi":"Waste","Suv ifloslanishi":"Water pollution","Havo ifloslanishi":"Air pollution","Tabiatga zarar":"Damage to nature","Yong‘in xavfi":"Fire risk","Boshqa":"Other","Hudud":"Area","Chorvoq":"Charvak","Chimyon":"Chimgan","Ugam–Chotqol":"Ugam-Chatkal","Boshqa joy":"Other place","Muammo izohi":"Problem description","Muammoni qisqacha tushuntiring...":"Briefly describe the problem...","Koordinata (xaritadan tanlang yoki GPS)":"Coordinates (select on map or use GPS)","Xaritadan nuqtani tanlang":"Select a point on the map","Surat (ixtiyoriy)":"Photo (optional)","Shaxsiy maxfiy ma’lumot kiritmayman va demo ekanini tushundim.":"I will not enter private personal information and I understand this is a demo.","Murojaatni yuborish":"Submit report",
+"Hududlar":"Areas","Suv sifati, qirg‘oq tozaligi va chiqindi to‘planishi.":"Water quality, clean shorelines and waste accumulation.","Sayyohlik yo‘laklari va tabiatga tushadigan yuklama.":"Tourist trails and pressure on nature.","Suv sathi, muhofaza hududlari va yong‘in xavfi.":"Water levels, protected areas and fire risk.","Favqulodda vaziyat yoki zudlik bilan aralashuv talab qiladigan holatda ushbu demo saytga tayanmang — tegishli rasmiy xizmatlarga bevosita murojaat qiling.":"For emergencies or situations needing urgent action, do not rely on this demo site — contact the relevant official services directly.",
+"Foydalanuvchi ish kabineti":"User workspace","Kabinetdan foydalanish uchun yuqorida rol tanlab kiring.":"Choose a role and sign in above to use the workspace.","EcoVolunteer — ko‘ngillilar":"EcoVolunteer — volunteers","Tozalash aksiyasi yoki ekologik tadbirga qiziqishingizni bildiring.":"Register your interest in a clean-up or environmental event.","Ism yoki jamoa nomi":"Name or team name","Ismingiz / jamoangiz":"Your name / team","Qiziqish yo‘nalishi":"Area of interest","Tozalash aksiyasi":"Clean-up event","Daraxt ekish":"Tree planting","Ekologik targ‘ibot":"Environmental awareness","Ma’lumot yig‘ish":"Data collection","Ko‘ngilli sifatida yozilish":"Register as a volunteer","EcoAlert va EcoSensor":"EcoAlert and EcoSensor","Kelajakda tasdiqlangan ekologik ogohlantirishlar, suv sifati va sathini o‘lchovchi sensorlar hamda hududiy kuzatuv qurilmalari ulanadi.":"In the future, verified environmental alerts, water quality and level sensors, and local monitoring devices will be connected.","Ushbu namoyish versiyasi haqiqiy sensor o‘lchovi yoki push/SMS xabar yubormaydi.":"This demo version does not receive real sensor readings or send push/SMS messages.",
+"Platforma haqida":"About the platform","— ekologik xabarlarni qabul qilish, tekshirish, mas’ul tashkilotga yo‘naltirish va bajarilgan natijani tasdiqlashga mo‘ljallangan raqamli ekotizim.":"— a digital ecosystem for receiving and checking environmental reports, sending them to responsible organizations and confirming results.","AI moduli:":"AI module:","kelajakda xabarlarni toifalash va takroriy murojaatlarni aniqlashga yordam beradi. Yakuniy qaror inson tomonidan qabul qilinadi.":"will help classify reports and identify duplicates in the future. Final decisions are made by people.","Maxfiylik:":"Privacy:","ushbu demo ma’lumotlarni faqat shu brauzer qurilmasida saqlaydi. Haqiqiy ishga tushirish uchun himoyalangan server, foydalanuvchi akkauntlari, ruxsat darajalari, zaxira nusxa va maxfiylik siyosati zarur.":"this demo stores data only in this browser. A secure server, user accounts, access levels, backups and a privacy policy are needed for a full launch.",
+"BO‘STONLIQ EcoOS • OpenStreetMap xaritasi • Demo platforma":"BO‘STONLIQ EcoOS • OpenStreetMap • Demo platform"
+},
+zh: {
+"Mehmon rejimi":"访客模式","Chiqish":"退出","Bosh sahifa":"首页","Real xarita":"实时地图","Xabar yuborish":"提交报告","Ish kabineti":"工作台","Ko‘ngillilar":"志愿者","Loyiha haqida":"关于项目",
+"RAQAMLI EKOLOGIK BOSHQARUV PLATFORMASI":"数字环境管理平台","FOYDALANUVCHI KIRISHI":"用户登录","Platformaga kirish":"进入平台","Namoyish uchun rol tanlang. Bu hozircha haqiqiy akkaunt yoki parol bilan himoyalangan kirish emas.":"请选择演示角色。目前这不是由真实账户或密码保护的登录系统。",
+"Foydalanuvchi nomi":"用户名","Masalan: Zarina":"例如：Zarina","Rol":"角色","Aholi / sayyoh":"居民 / 游客","Operator / moderator":"操作员 / 管理员","Mas’ul tashkilot":"负责机构","Ko‘ngilli":"志愿者","Administrator":"管理员","Kabinetga kirish":"进入工作台",
+"Tabiatni asrash —":"保护自然，","umumiy mas’uliyat.":"人人有责。","Ekologik muammolarni xaritada belgilash, mas’ullarga yetkazish, bajarilgan ishlarni tasdiqlash va hududiy natijalarni kuzatish uchun yagona platforma.":"一个用于在地图上标记环境问题、通知负责人、确认已完成工作并跟踪地区成果的平台。",
+"Muammo haqida xabar berish":"报告问题","Xaritani ko‘rish":"查看地图","EcoOS qanday ishlaydi?":"EcoOS 如何运作？","Xabar yuboriladi":"提交报告","Operator tekshiradi":"操作员审核","Mas’ul tashkilotga yo‘naltiriladi":"发送给负责机构","Ish bajarilib, dalil yuklanadi":"完成工作并上传证明","Natija xarita va statistikada ko‘rinadi":"结果显示在地图和统计数据中",
+"Jami murojaat":"报告总数","Platformaga kiritilgan":"已提交平台","Yangi / jarayonda":"新建 / 处理中","Hali yopilmagan":"尚未关闭","Bartaraf etilgan":"已解决","Tasdiqlangan holatlar":"已确认案例","Ko‘ngilli yozuvlari":"志愿者登记","Demo ro‘yxat":"演示列表",
+"EcoMap — Bo‘stonliqning real xaritasi":"EcoMap — Bo‘stonliq 实时地图","Xarita OpenStreetMap ma’lumotlari asosida internet orqali yuklanadi. Belgilar foydalanuvchi yuborgan xabarlarning taxminiy koordinatalarini ko‘rsatadi; hudud nomlari esa yo‘nalish belgilaridir.":"地图通过互联网加载 OpenStreetMap 数据。标记显示用户报告的大致坐标；区域名称表示大致位置。",
+"📍 Joylashuvimni aniqlash":"📍 定位我的位置","Bo‘stonliqqa qaytish":"返回 Bo‘stonliq","Barcha holatlar":"所有状态","Yangi":"新建","Tekshirilmoqda":"审核中","Jarayonda":"处理中","Bartaraf etildi":"已解决","Xaritadan nuqtani tanlash orqali xabar formasiga koordinata qo‘shishingiz mumkin. Geolokatsiya faqat ruxsat berganingizda ishlaydi.":"选择地图上的点即可将坐标添加到报告表单。只有获得您的许可后才会使用定位功能。",
+"EcoReport — muammo yuborish":"EcoReport — 报告问题","Muammo turi":"问题类型","Tanlang":"请选择","Chiqindi":"垃圾","Suv ifloslanishi":"水污染","Havo ifloslanishi":"空气污染","Tabiatga zarar":"自然破坏","Yong‘in xavfi":"火灾风险","Boshqa":"其他","Hudud":"区域","Chorvoq":"Charvak","Chimyon":"Chimgan","Ugam–Chotqol":"Ugam-Chatkal","Boshqa joy":"其他地点","Muammo izohi":"问题描述","Muammoni qisqacha tushuntiring...":"请简要描述问题……","Koordinata (xaritadan tanlang yoki GPS)":"坐标（地图选择或 GPS）","Xaritadan nuqtani tanlang":"请在地图上选择一个点","Surat (ixtiyoriy)":"照片（可选）","Shaxsiy maxfiy ma’lumot kiritmayman va demo ekanini tushundim.":"我不会输入个人隐私信息，并且明白这是演示版本。","Murojaatni yuborish":"提交报告",
+"Hududlar":"区域","Suv sifati, qirg‘oq tozaligi va chiqindi to‘planishi.":"水质、岸边清洁和垃圾堆积。","Sayyohlik yo‘laklari va tabiatga tushadigan yuklama.":"旅游步道及其对自然环境的影响。","Suv sathi, muhofaza hududlari va yong‘in xavfi.":"水位、保护区和火灾风险。","Favqulodda vaziyat yoki zudlik bilan aralashuv talab qiladigan holatda ushbu demo saytga tayanmang — tegishli rasmiy xizmatlarga bevosita murojaat qiling.":"如遇紧急情况或需要立即处理，请勿依赖此演示网站，请直接联系相关官方部门。",
+"Foydalanuvchi ish kabineti":"用户工作台","Kabinetdan foydalanish uchun yuqorida rol tanlab kiring.":"请先在上方选择角色并登录。","EcoVolunteer — ko‘ngillilar":"EcoVolunteer — 志愿者","Tozalash aksiyasi yoki ekologik tadbirga qiziqishingizni bildiring.":"登记您对清洁行动或环保活动的兴趣。","Ism yoki jamoa nomi":"姓名或团队名称","Ismingiz / jamoangiz":"您的姓名 / 团队","Qiziqish yo‘nalishi":"感兴趣的领域","Tozalash aksiyasi":"清洁活动","Daraxt ekish":"植树","Ekologik targ‘ibot":"环保宣传","Ma’lumot yig‘ish":"信息收集","Ko‘ngilli sifatida yozilish":"注册成为志愿者","EcoAlert va EcoSensor":"EcoAlert 和 EcoSensor","Kelajakda tasdiqlangan ekologik ogohlantirishlar, suv sifati va sathini o‘lchovchi sensorlar hamda hududiy kuzatuv qurilmalari ulanadi.":"未来将接入经核实的环境警报、水质和水位传感器以及区域监测设备。","Ushbu namoyish versiyasi haqiqiy sensor o‘lchovi yoki push/SMS xabar yubormaydi.":"此演示版本不会接收真实传感器数据，也不会发送推送或短信。",
+"Platforma haqida":"关于平台","— ekologik xabarlarni qabul qilish, tekshirish, mas’ul tashkilotga yo‘naltirish va bajarilgan natijani tasdiqlashga mo‘ljallangan raqamli ekotizim.":"— 一个用于接收和审核环境报告、转交负责机构并确认处理结果的数字生态系统。","AI moduli:":"人工智能模块：","kelajakda xabarlarni toifalash va takroriy murojaatlarni aniqlashga yordam beradi. Yakuniy qaror inson tomonidan qabul qilinadi.":"未来将帮助分类报告并识别重复提交。最终决定由人工做出。","Maxfiylik:":"隐私：","ushbu demo ma’lumotlarni faqat shu brauzer qurilmasida saqlaydi. Haqiqiy ishga tushirish uchun himoyalangan server, foydalanuvchi akkauntlari, ruxsat darajalari, zaxira nusxa va maxfiylik siyosati zarur.":"此演示版本仅在当前浏览器中保存数据。正式上线需要安全服务器、用户账户、权限管理、备份和隐私政策。",
+"BO‘STONLIQ EcoOS • OpenStreetMap xaritasi • Demo platforma":"BO‘STONLIQ EcoOS • OpenStreetMap 地图 • 演示平台"
+}
+};
+
+// Qo‘shimcha tarjimalar: dinamik xabarlar, kabinet va ogohlantirishlar.
+Object.assign(LANGS.ru, {
+"Xabar saqlandi. Raqami: ":"Сообщение сохранено. Номер: ",
+". Bu demo yozuv faqat ushbu brauzerda ko‘rinadi.":". Эта демозапись видна только в этом браузере.",
+"Demo ro‘yxatga qo‘shildingiz.":"Вы добавлены в демонстрационный список.",
+"Iltimos, foydalanuvchi nomini kiriting.":"Пожалуйста, введите имя пользователя.",
+"Brauzer geolokatsiyani qo‘llamaydi.":"Браузер не поддерживает геолокацию.",
+"Joylashuvga ruxsat berilmadi yoki aniqlab bo‘lmadi.":"Доступ к местоположению не разрешён или его не удалось определить.",
+"Bu amal uchun ruxsat yo‘q.":"У вас нет разрешения на это действие.",
+"Faqat administrator.":"Только для администратора.",
+"Barcha demo yozuvlar o‘chirilsinmi?":"Удалить все демонстрационные записи?",
+"Xarita kutubxonasi yuklanmadi. Internet aloqasini tekshiring va sahifani qayta oching.":"Не удалось загрузить библиотеку карты. Проверьте подключение к интернету и обновите страницу.",
+"Xabar yuboriladi":"Сообщение отправляется","Operator tekshiradi":"Оператор проверяет",
+"Barcha murojaatlar":"Все обращения","Mening murojaatlarim":"Мои обращения",
+"Tashkilotga yo‘naltirilgan murojaatlar":"Обращения, направленные организации",
+"Ko‘ngillilar bo‘limi":"Раздел волонтёров","Hozircha ko‘rsatish uchun yozuv yo‘q.":"Пока нет записей для отображения.",
+"Kirishdan so‘ng o‘z rolingizga mos kabinet ko‘rinadi.":"После входа появится кабинет, соответствующий вашей роли.",
+"Siz ":"Вы вошли как "," rolida kirdingiz. Ruxsat etilgan amallar quyida ko‘rsatilgan.":" . Доступные действия показаны ниже.",
+"Operator murojaat holatini yangilaydi. Demo versiyada barcha yozuvlar shu qurilmada.":"Оператор обновляет статус обращения. В демоверсии все записи хранятся на этом устройстве.",
+"Ko‘ngillilar ro‘yxatiga pastdagi shakl orqali qo‘shiling. Tashkilotchi tasdiqlagan tadbirlarda qatnashing.":"Добавьтесь в список волонтёров через форму ниже. Участвуйте в мероприятиях, подтверждённых организатором.",
+"Mas’ul tashkilot / guruh":"Ответственная организация / группа","Saqlash":"Сохранить",
+"Ma’lumotlarni JSON qilib olish":"Экспортировать данные в JSON","Demo ma’lumotlarni tozalash":"Очистить демоданные",
+"Mehmon":"Гость","Chiqindi":"Мусор","Suv ifloslanishi":"Загрязнение воды","Havo ifloslanishi":"Загрязнение воздуха",
+"Tabiatga zarar":"Вред природе","Yong‘in xavfi":"Риск пожара","Boshqa":"Другое",
+"Yangi":"Новый","Tekshirilmoqda":"Проверяется","Jarayonda":"В процессе","Bartaraf etildi":"Устранено",
+"Chorvoq yo‘nalishi":"Направление Чарвак","Hududiy yo‘nalish belgisi":"Метка района",
+"Chimyon yo‘nalishi":"Направление Чимган","Ugam–Chotqol yo‘nalishi":"Направление Угам-Чаткаль",
+"Taxminiy hudud belgisi":"Примерная отметка района",
+"Muammo":"Проблема","Aholi / sayyoh":"Житель / турист","Operator / moderator":"Оператор / модератор",
+"Mas’ul tashkilot":"Ответственная организация","Ko‘ngilli":"Волонтёр","Administrator":"Администратор"
+})
+Object.assign(LANGS.en, {
+"Xabar saqlandi. Raqami: ":"Report saved. ID: ",
+". Bu demo yozuv faqat ushbu brauzerda ko‘rinadi.":". This demo record is visible only in this browser.",
+"Demo ro‘yxatga qo‘shildingiz.":"You have been added to the demo list.",
+"Iltimos, foydalanuvchi nomini kiriting.":"Please enter a username.",
+"Brauzer geolokatsiyani qo‘llamaydi.":"Your browser does not support geolocation.",
+"Joylashuvga ruxsat berilmadi yoki aniqlab bo‘lmadi.":"Location permission was denied or the location could not be found.",
+"Bu amal uchun ruxsat yo‘q.":"You are not allowed to perform this action.",
+"Faqat administrator.":"Administrator only.",
+"Barcha demo yozuvlar o‘chirilsinmi?":"Delete all demo records?",
+"Xarita kutubxonasi yuklanmadi. Internet aloqasini tekshiring va sahifani qayta oching.":"The map library could not be loaded. Check your internet connection and reload the page.",
+"Barcha murojaatlar":"All reports","Mening murojaatlarim":"My reports",
+"Tashkilotga yo‘naltirilgan murojaatlar":"Reports assigned to the organization",
+"Ko‘ngillilar bo‘limi":"Volunteer section","Hozircha ko‘rsatish uchun yozuv yo‘q.":"There are no records to show yet.",
+"Kirishdan so‘ng o‘z rolingizga mos kabinet ko‘rinadi.":"Your role-based workspace will appear after you sign in.",
+"Siz ":"You are signed in as "," rolida kirdingiz. Ruxsat etilgan amallar quyida ko‘rsatilgan.":" . Available actions are shown below.",
+"Operator murojaat holatini yangilaydi. Demo versiyada barcha yozuvlar shu qurilmada.":"The operator updates report statuses. In this demo, all records are stored on this device.",
+"Ko‘ngillilar ro‘yxatiga pastdagi shakl orqali qo‘shiling. Tashkilotchi tasdiqlagan tadbirlarda qatnashing.":"Join the volunteer list using the form below. Take part in events approved by the organizer.",
+"Mas’ul tashkilot / guruh":"Responsible organization / group","Saqlash":"Save",
+"Ma’lumotlarni JSON qilib olish":"Export data as JSON","Demo ma’lumotlarni tozalash":"Clear demo data",
+"Chorvoq yo‘nalishi":"Charvak direction","Hududiy yo‘nalish belgisi":"Area marker",
+"Chimyon yo‘nalishi":"Chimgan direction","Ugam–Chotqol yo‘nalishi":"Ugam-Chatkal direction",
+"Taxminiy hudud belgisi":"Approximate area marker",
+"Muammo":"Problem","Aholi / sayyoh":"Resident / tourist","Operator / moderator":"Operator / moderator",
+"Mas’ul tashkilot":"Responsible organization","Ko‘ngilli":"Volunteer","Administrator":"Administrator"
+})
+Object.assign(LANGS.zh, {
+"Xabar saqlandi. Raqami: ":"报告已保存。编号：",
+". Bu demo yozuv faqat ushbu brauzerda ko‘rinadi。":". 此演示记录仅在此浏览器中可见。",
+". Bu demo yozuv faqat ushbu brauzerda ko‘rinadi.":". 此演示记录仅在此浏览器中可见。",
+"Demo ro‘yxatga qo‘shildingiz.":"您已加入演示名单。",
+"Iltimos, foydalanuvchi nomini kiriting.":"请输入用户名。",
+"Brauzer geolokatsiyani qo‘llamaydi.":"您的浏览器不支持地理定位。",
+"Joylashuvga ruxsat berilmadi yoki aniqlab bo‘lmadi.":"未获得定位权限，或无法确定位置。",
+"Bu amal uchun ruxsat yo‘q.":"您没有执行此操作的权限。",
+"Faqat administrator.":"仅限管理员。",
+"Barcha demo yozuvlar o‘chirilsinmi?":"确定要删除所有演示记录吗？",
+"Xarita kutubxonasi yuklanmadi. Internet aloqasini tekshiring va sahifani qayta oching.":"地图组件加载失败。请检查网络连接并刷新页面。",
+"Barcha murojaatlar":"所有报告","Mening murojaatlarim":"我的报告",
+"Tashkilotga yo‘naltirilgan murojaatlar":"分配给机构的报告",
+"Ko‘ngillilar bo‘limi":"志愿者专区","Hozircha ko‘rsatish uchun yozuv yo‘q.":"目前没有可显示的记录。",
+"Kirishdan so‘ng o‘z rolingizga mos kabinet ko‘rinadi.":"登录后将显示与您的角色相对应的工作台。",
+"Siz ":"您当前的身份是："," rolida kirdingiz. Ruxsat etilgan amallar quyida ko‘rsatilgan.":"。可执行的操作如下。",
+"Operator murojaat holatini yangilaydi. Demo versiyada barcha yozuvlar shu qurilmada.":"操作员可以更新报告状态。演示版本中的记录保存在此设备上。",
+"Ko‘ngillilar ro‘yxatiga pastdagi shakl orqali qo‘shiling. Tashkilotchi tasdiqlagan tadbirlarda qatnashing.":"请通过下方表单加入志愿者名单，并参加组织者确认的活动。",
+"Mas’ul tashkilot / guruh":"负责机构 / 团队","Saqlash":"保存",
+"Ma’lumotlarni JSON qilib olish":"导出 JSON 数据","Demo ma’lumotlarni tozalash":"清除演示数据",
+"Chorvoq yo‘nalishi":"Charvak 方向","Hududiy yo‘nalish belgisi":"区域标记",
+"Chimyon yo‘nalishi":"Chimgan 方向","Ugam–Chotqol yo‘nalishi":"Ugam-Chatkal 方向",
+"Taxminiy hudud belgisi":"大致区域标记",
+"Muammo":"问题","Aholi / sayyoh":"居民 / 游客","Operator / moderator":"操作员 / 管理员",
+"Mas’ul tashkilot":"负责机构","Ko‘ngilli":"志愿者","Administrator":"管理员"
+})
+
+let activeLanguage = 'uz';
+const translatedTextNodes = new WeakMap();
+const translatedAttributes = new WeakMap();
+
+function translateText(value) {
+  if (activeLanguage === 'uz') return value;
+  const dict = LANGS[activeLanguage] || {};
+  let result = value;
+  // Longest phrases first, so full sentences are translated before short words.
+  const entries = Object.entries(dict).sort((a,b) => b[0].length - a[0].length);
+  for (const [source, target] of entries) {
+    if (source && result.includes(source)) result = result.split(source).join(target);
+  }
+  return result;
+}
+function translatePage() {
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  let node;
+  while ((node = walker.nextNode())) {
+    let state = translatedTextNodes.get(node);
+    const current = node.nodeValue;
+    if (!state) {
+      state = { source: current, rendered: null };
+      translatedTextNodes.set(node, state);
+    } else if (current !== state.rendered) {
+      // The app itself changed this node; use its new Uzbek source text.
+      state.source = current;
+    }
+    const rendered = translateText(state.source);
+    if (current !== rendered) node.nodeValue = rendered;
+    state.rendered = rendered;
+  }
+
+  document.querySelectorAll('[placeholder],[title],[aria-label]').forEach(el => {
+    ['placeholder','title','aria-label'].forEach(attr => {
+      if (!el.hasAttribute(attr)) return;
+      let state = translatedAttributes.get(el);
+      if (!state) { state = {}; translatedAttributes.set(el, state); }
+      const current = el.getAttribute(attr);
+      if (!(attr in state)) state[attr] = { source: current, rendered: null };
+      else if (current !== state[attr].rendered) state[attr].source = current;
+      const rendered = translateText(state[attr].source);
+      if (current !== rendered) el.setAttribute(attr, rendered);
+      state[attr].rendered = rendered;
+    });
+  });
+}
+function setLanguage(lang) {
+  activeLanguage = Object.prototype.hasOwnProperty.call(LANGS, lang) || lang === 'uz' ? lang : 'uz';
+  document.documentElement.lang = activeLanguage;
+  translatePage();
+}
+const languageObserver = new MutationObserver(() => translatePage());
+languageObserver.observe(document.body, {childList:true,subtree:true,characterData:true});
+const DB='ecoos_platform_reports_v3', VOL='ecoos_platform_vol_v3', USER='ecoos_platform_user_v3';
+let currentUser=null, map=null, markers=[];
+const roleNames={citizen:'Aholi / sayyoh',operator:'Operator / moderator',organization:'Mas’ul tashkilot',volunteer:'Ko‘ngilli',admin:'Administrator'};
+const $=id=>document.getElementById(id);
+function reports(){try{return JSON.parse(localStorage.getItem(DB)||'[]')}catch(e){return []}}
+function saveReports(a){localStorage.setItem(DB,JSON.stringify(a));refresh()}
+function volunteers(){try{return JSON.parse(localStorage.getItem(VOL)||'[]')}catch(e){return []}}
+function login(){const name=$('username').value.trim();if(!name){alert('Iltimos, foydalanuvchi nomini kiriting.');return}
+currentUser={name,role:$('role').value};localStorage.setItem(USER,JSON.stringify(currentUser));showUser();showPage('workspace')}
+function logout(){currentUser=null;localStorage.removeItem(USER);showUser();showPage('login')}
+function showUser(){if(!currentUser){try{currentUser=JSON.parse(localStorage.getItem(USER)||'null')}catch(e){}}
+$('userlabel').textContent=currentUser?currentUser.name+' • '+roleNames[currentUser.role]:'Mehmon rejimi';
+$('logoutBtn').style.display=currentUser?'inline-block':'none';
+$('roleInfo').textContent=currentUser?'Siz '+roleNames[currentUser.role]+' rolida kirdingiz. Ruxsat etilgan amallar quyida ko‘rsatilgan.':'Kabinetdan foydalanish uchun yuqorida rol tanlab kiring.';
+renderWorkspace()}
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function statusClass(s){return s==='Bartaraf etildi'?'done':s==='Jarayonda'?'work':s==='Yangi'?'new':''}
+function refresh(){const a=reports();$('countAll').textContent=a.length;$('countOpen').textContent=a.filter(x=>x.status!=='Bartaraf etildi').length;$('countDone').textContent=a.filter(x=>x.status==='Bartaraf etildi').length;$('countVol').textContent=volunteers().length;renderMarkers();renderWorkspace()}
+function renderMarkers(){if(!map)return;markers.forEach(m=>map.removeLayer(m));markers=[];const filter=$('mapFilter')?.value||'all';
+reports().filter(x=>x.lat!=null&&x.lng!=null&&(filter==='all'||x.status===filter)).forEach(x=>{
+const m=L.marker([x.lat,x.lng]).addTo(map).bindPopup(`<b>${escapeHtml(x.type)}</b><br>${escapeHtml(x.area)}<br><span>${escapeHtml(x.status)}</span><br>${escapeHtml(x.desc)}<br><small>${escapeHtml(x.id)}</small>`);markers.push(m)})}
+function renderWorkspace(){const el=$('workspaceContent');if(!el)return;if(!currentUser){el.innerHTML='<p class="muted">Kirishdan so‘ng o‘z rolingizga mos kabinet ko‘rinadi.</p>';return}
+let a=reports(),role=currentUser.role,html='';
+if(role==='citizen'){html='<h3>Mening murojaatlarim</h3>'+a.filter(x=>x.createdBy===currentUser.name).map(reportCard).join('');}
+if(role==='operator'||role==='admin'){html='<h3>Barcha murojaatlar</h3><p class="muted small">Operator murojaat holatini yangilaydi. Demo versiyada barcha yozuvlar shu qurilmada.</p>'+a.map(x=>reportCard(x,true)).join('')}
+if(role==='organization'){html='<h3>Tashkilotga yo‘naltirilgan murojaatlar</h3>'+a.filter(x=>x.assigned===currentUser.name||!x.assigned).map(x=>reportCard(x,true)).join('')}
+if(role==='volunteer'){html='<h3>Ko‘ngillilar bo‘limi</h3><p>Ko‘ngillilar ro‘yxatiga pastdagi shakl orqali qo‘shiling. Tashkilotchi tasdiqlagan tadbirlarda qatnashing.</p>'+volunteers().map(v=>`<div class="rowitem">${escapeHtml(v.name)} — ${escapeHtml(v.interest)}</div>`).join('')}
+if(!html.includes('rowitem')&&!html.includes('article'))html+='<p class="muted">Hozircha ko‘rsatish uchun yozuv yo‘q.</p>';
+if(role==='admin')html+='<div class="toolbar"><button class="alt" onclick="exportData()">Ma’lumotlarni JSON qilib olish</button><button class="danger" onclick="resetDemo()">Demo ma’lumotlarni tozalash</button></div>';
+el.innerHTML=html}
+function reportCard(x,canManage=false){return `<article class="rowitem"><div class="inline"><b>${escapeHtml(x.id)}</b><span class="status ${statusClass(x.status)}">${escapeHtml(x.status)}</span></div><p><b>${escapeHtml(x.type)}</b> • ${escapeHtml(x.area)}</p><p class="small">${escapeHtml(x.desc)}</p><p class="muted small">${escapeHtml(x.date)} • ${escapeHtml(x.createdBy)}</p>${canManage?`<div class="toolbar"><select id="st-${x.id}"><option ${x.status==='Yangi'?'selected':''}>Yangi</option><option ${x.status==='Tekshirilmoqda'?'selected':''}>Tekshirilmoqda</option><option ${x.status==='Jarayonda'?'selected':''}>Jarayonda</option><option ${x.status==='Bartaraf etildi'?'selected':''}>Bartaraf etildi</option></select><input id="as-${x.id}" placeholder="Mas’ul tashkilot / guruh" value="${escapeHtml(x.assigned||'')}" style="max-width:220px"><button onclick="updateReport('${x.id}')">Saqlash</button></div>`:''}</article>`}
+function updateReport(id){if(!currentUser||!['operator','admin','organization'].includes(currentUser.role))return alert('Bu amal uchun ruxsat yo‘q.');const a=reports(),x=a.find(r=>r.id===id);if(!x)return;x.status=$('st-'+id).value;x.assigned=$('as-'+id).value; x.updatedBy=currentUser.name;saveReports(a)}
+function locateMe(){if(!navigator.geolocation)return alert('Brauzer geolokatsiyani qo‘llamaydi.');navigator.geolocation.getCurrentPosition(p=>{const lat=p.coords.latitude,lng=p.coords.longitude;map.setView([lat,lng],15);setCoords(lat,lng)},()=>alert('Joylashuvga ruxsat berilmadi yoki aniqlab bo‘lmadi.'))}
+function setCoords(lat,lng){$('coords').value=lat.toFixed(6)+', '+lng.toFixed(6);$('coords').dataset.lat=lat;$('coords').dataset.lng=lng}
+$('reportForm').addEventListener('submit',e=>{e.preventDefault();const c=$('coords'),lat=c.dataset.lat?Number(c.dataset.lat):null,lng=c.dataset.lng?Number(c.dataset.lng):null;const x={id:'ECO-'+Date.now().toString().slice(-8),type:$('type').value,area:$('area').value,desc:$('desc').value,lat,lng,status:'Yangi',assigned:'',createdBy:currentUser?.name||'Mehmon',date:new Date().toLocaleString('uz-UZ')};const a=reports();a.push(x);saveReports(a);$('reportMsg').textContent='Murojaat saqlandi. Raqami: '+x.id+'. Bu demo yozuv faqat ushbu brauzerda ko‘rinadi.';e.target.reset();c.value='';delete c.dataset.lat;delete c.dataset.lng});
+$('volForm').addEventListener('submit',e=>{e.preventDefault();const a=volunteers();a.push({name:$('volName').value,interest:$('volInterest').value,date:new Date().toLocaleDateString('uz-UZ')});localStorage.setItem(VOL,JSON.stringify(a));$('volMsg').textContent='Demo ro‘yxatga qo‘shildingiz.';e.target.reset();refresh()});
+function exportData(){const payload={reports:reports(),volunteers:volunteers(),exportedAt:new Date().toISOString()};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ecoos-platforma-hisobot.json';a.click();URL.revokeObjectURL(a.href)}
+function resetDemo(){if(!currentUser||currentUser.role!=='admin')return alert('Faqat administrator.');if(confirm('Barcha demo yozuvlar o‘chirilsinmi?')){localStorage.removeItem(DB);localStorage.removeItem(VOL);refresh()}}
+function initMap(){if(!window.L){$('map').innerHTML='<div class="notice">Xarita kutubxonasi yuklanmadi. Internet aloqasini tekshiring va sahifani qayta oching.</div>';return}
+map=L.map('map').setView([41.55,69.95],10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+L.marker([41.63,69.93]).addTo(map).bindPopup('<b>Chorvoq yo‘nalishi</b><br>Hududiy yo‘nalish belgisi');
+L.marker([41.50,70.02]).addTo(map).bindPopup('<b>Chimyon yo‘nalishi</b><br>Hududiy yo‘nalish belgisi');
+L.marker([41.55,70.25]).addTo(map).bindPopup('<b>Ugam–Chotqol yo‘nalishi</b><br>Taxminiy hudud belgisi');
+map.on('click',e=>{setCoords(e.latlng.lat,e.latlng.lng);showPage('report')});
+renderMarkers()}
+initMap();showUser();refresh();setLanguage('uz');showPage('home');
+</script></body></html>
